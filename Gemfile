@@ -31,6 +31,8 @@ gem 'rack-ssl-enforcer'
 gem 'fabrication', "~> 1.3.0"   # Both for tests, and loading demo data
 gem 'rails_autolink', '~> 1.0.9'
 
+gem 'newrelic_rpm'
+
 platform :ruby do
   gem 'mongo', '= 1.6.2'
   gem 'bson', '= 1.6.2'
