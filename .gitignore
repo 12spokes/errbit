@@ -12,3 +12,9 @@ config/mongoid.yml
 *~
 *.rbc
 .DS_Store
+*.rbx
+bin
+bundle
+coverage
+*#
+.ruby-version
