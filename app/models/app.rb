@@ -9,6 +9,7 @@ class App
   field :bitbucket_repo
   field :asset_host
   field :repository_branch
+  field :current_app_version
   field :resolve_errs_on_deploy, :type => Boolean, :default => false
   field :notify_all_users, :type => Boolean, :default => false
   field :notify_on_errs, :type => Boolean, :default => true
@@ -16,7 +17,12 @@ class App
   field :email_at_notices, :type => Array, :default => Errbit::Config.email_at_notices
 
   # Some legacy apps may have string as key instead of BSON::ObjectID
-  identity :type => String
+  # identity :type => String
+  field :_id,
+    type: String,
+    pre_processed: true,
+    default: ->{ Moped::BSON::ObjectId.new.to_s }
+
 
   embeds_many :watchers
   embeds_many :deploys
@@ -42,11 +48,17 @@ class App
   accepts_nested_attributes_for :notification_service, :allow_destroy => true,
     :reject_if => proc { |attrs| !NotificationService.subclasses.map(&:to_s).include?(attrs[:type].to_s) }
 
+  # Acceps a hash with the following attributes:
+  #
+  # * <tt>:error_class</tt> - the class of error (required to create a new Problem)
+  # * <tt>:environment</tt> - the environment the source app was running in (required to create a new Problem)
+  # * <tt>:fingerprint</tt> - a unique value identifying the notice
+  #
   def find_or_create_err!(attrs)
     Err.where(
       :fingerprint => attrs[:fingerprint]
     ).first ||
-      problems.create!.errs.create!(attrs)
+      problems.create!(attrs.slice(:error_class, :environment)).errs.create!(attrs.slice(:fingerprint, :problem_id))
   end
 
   # Mongoid Bug: find(id) on association proxies returns an Enumerator
@@ -55,7 +67,7 @@ class App
   end
 
   def self.find_by_api_key!(key)
-    where(:api_key => key).first || raise(Mongoid::Errors::DocumentNotFound.new(self,key))
+    find_by(:api_key => key)
   end
 
   def last_deploy_at
@@ -157,6 +169,10 @@ class App
 
   def email_at_notices
     Errbit::Config.per_app_email_at_notices ? super : Errbit::Config.email_at_notices
+  end
+
+  def regenerate_api_key!
+    set(:api_key, SecureRandom.hex)
   end
 
   protected
