@@ -6,3 +6,23 @@
 
 production:
   uri: <%= ENV['MONGOLAB_URI'] %>
+
+development:
+  sessions:
+    default:
+      database: errbit_development
+      hosts:
+        - localhost:27017
+  options:
+    identity_map_enabled: true
+    use_utc: true
+
+test:
+  sessions:
+    default:
+      hosts:
+        - localhost:27017
+      database: errbit_test
+  options:
+    identity_map_enabled: true
+    use_utc: true
